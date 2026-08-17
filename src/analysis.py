@@ -353,7 +353,7 @@ class StatisticalAnalyzer:
         """I_x(a,b) via Simpson's rule numerical integration.
 
         I_x(a,b) = integral_0^x t^{a-1} (1-t)^{b-1} dt / B(a,b)
-        Uses analytical tail correction for boundary singularities when a<1 or b<1.
+        Uses analytical correction for boundary singularities when a<1 or b<1.
         """
         if x <= 0:
             return 0.0
@@ -361,13 +361,13 @@ class StatisticalAnalyzer:
             return 1.0
 
         def integrand(t: float) -> float:
-            if t <= 0.0:
-                return 0.0
-            if t >= 1.0:
+            if t <= 0.0 or t >= 1.0:
                 return 0.0
             return t ** (a - 1) * (1.0 - t) ** (b - 1)
 
         def simpson_integral(lo: float, hi: float, steps: int) -> float:
+            if lo >= hi:
+                return 0.0
             h = (hi - lo) / steps
             s = integrand(lo) + integrand(hi)
             for i in range(1, steps, 2):
@@ -376,33 +376,44 @@ class StatisticalAnalyzer:
                 s += 2.0 * integrand(lo + i * h)
             return s * h / 3.0
 
-        # For the denominator (integral 0 to 1), split at a cutoff to handle
-        # singularities at t=1 analytically: tail = integral(cutoff,1) ~ cutoff^(a-1) * (1-cutoff)^b / b
-        cutoff = 1.0 - 1e-6
-        den_main = simpson_integral(0.0, cutoff, n // 2)
-        tail_correction = 0.0
-        if b < 1 and cutoff < 1.0:
-            tail_correction = cutoff ** (a - 1) * (1.0 - cutoff) ** b / b
-        den = den_main + tail_correction
+        lo_eps = 1e-8 if a < 1 else 0.0
+        hi_eps = 1.0 - 1e-6 if b < 1 else 1.0
 
-        num = simpson_integral(0.0, min(x, cutoff), n // 2)
-        if x > cutoff and b < 1:
-            num += cutoff ** (a - 1) * (1.0 - cutoff) ** b / b
+        # Analytical head: integral(0, lo_eps) ~ lo_eps^a / a  when a<1
+        den_head = lo_eps ** a / a if a < 1 else 0.0
+
+        # Analytical tail: integral(hi_eps, 1) ~ hi_eps^(a-1) * (1-hi_eps)^b / b  when b<1
+        den_tail = 0.0
+        if b < 1:
+            den_tail = hi_eps ** (a - 1) * (1.0 - hi_eps) ** b / b
+
+        # Denominator: integral from 0 to 1
+        den_mid = simpson_integral(max(lo_eps, 1e-12), hi_eps, n // 2)
+        den = den_head + den_mid + den_tail
+
+        # Numerator: integral from 0 to x
+        num_head = lo_eps ** a / a if (a < 1 and x > lo_eps) else 0.0
+
+        num_tail = 0.0
+        if b < 1 and x > hi_eps:
+            num_tail = hi_eps ** (a - 1) * ((1.0 - hi_eps) ** b - (1.0 - x) ** b) / b
+
+        num_mid = simpson_integral(max(lo_eps, 1e-12), min(hi_eps, x), n // 2)
+        num = num_head + num_mid + num_tail
 
         if den == 0:
             return 0.0
-        return num / den
+        return min(1.0, max(0.0, num / den))
 
     @staticmethod
     def _normal_cdf(x: float) -> float:
         """Standard normal CDF using error function approximation."""
         return 0.5 * (1 + math.erf(x / math.sqrt(2)))
 
-    @staticmethod
     def _format_test_result(
-        name: str, statistic: float, p_value: float, effect: float, effect_name: str
+        self, name: str, statistic: float, p_value: float, effect: float, effect_name: str
     ) -> str:
-        sig = "significant" if p_value < 0.05 else "not significant"
+        sig = "significant" if p_value < self.significance_level else "not significant"
         return (
             f"{name}: stat={statistic:.4f}, p={p_value:.6f} ({sig}), "
             f"{effect_name}={effect:.4f}"

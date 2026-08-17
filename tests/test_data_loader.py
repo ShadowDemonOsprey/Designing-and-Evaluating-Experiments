@@ -102,3 +102,18 @@ class TestSaveSamples:
         loaded = loader.load("out.json")
         assert len(loaded) == 1
         assert loaded[0].input_text == "q"
+
+
+class TestLoadAll:
+    def test_load_all_skips_subdirectories(self, sample_dir):
+        data = [{"id": "1", "input": "q", "output": "a"}]
+        path = os.path.join(sample_dir, "test.json")
+        with open(path, "w") as f:
+            json.dump(data, f)
+
+        subdir = os.path.join(sample_dir, "subdir.json")
+        os.makedirs(subdir, exist_ok=True)
+
+        loader = DataLoader(sample_dir)
+        samples = loader.load_all()
+        assert len(samples) == 1

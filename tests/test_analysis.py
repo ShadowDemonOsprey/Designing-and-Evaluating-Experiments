@@ -145,3 +145,36 @@ class TestTTestCorrectness:
             assert our_val == pytest.approx(scipy_val, abs=0.005), (
                 f"I({x},{a},{b}): ours={our_val:.6f}, scipy={scipy_val:.6f}"
             )
+
+    def test_incomplete_beta_singular_a_lt_1(self):
+        try:
+            from scipy.special import betainc
+        except ImportError:
+            pytest.skip("scipy not installed")
+
+        singular_cases = [(0.5, 0.5, 0.5), (0.8, 0.5, 0.5), (0.3, 0.8, 0.5)]
+        for x, a, b in singular_cases:
+            scipy_val = betainc(a, b, x)
+            our_val = StatisticalAnalyzer._incomplete_beta_simpson(x, a, b)
+            assert our_val == pytest.approx(scipy_val, abs=0.02), (
+                f"I({x},{a},{b}): ours={our_val:.6f}, scipy={scipy_val:.6f}"
+            )
+
+
+class TestSignificanceLevel:
+    def test_summary_respects_custom_significance_level(self):
+        a = [1.0, 2.0, 3.0, 4.0, 5.0]
+        b = [1.1, 2.1, 3.1, 4.1, 5.1]
+        analyzer = StatisticalAnalyzer(significance_level=0.20)
+        result = analyzer.paired_t_test(a, b)
+        if result.p_value < 0.20:
+            assert "significant" in result.summary
+        else:
+            assert "not significant" in result.summary
+
+    def test_strict_significance_level(self):
+        a = [1.0, 1.5, 1.2, 1.4, 1.1]
+        b = [1.05, 1.45, 1.25, 1.35, 1.15]
+        analyzer = StatisticalAnalyzer(significance_level=0.001)
+        result = analyzer.paired_t_test(a, b)
+        assert not result.significant

@@ -56,7 +56,9 @@ class DataLoader:
         for fname in sorted(os.listdir(self.data_dir)):
             ext = os.path.splitext(fname)[1].lower()
             if ext in self.SUPPORTED_EXTENSIONS:
-                samples.extend(self.load(fname))
+                full_path = os.path.join(self.data_dir, fname)
+                if os.path.isfile(full_path):
+                    samples.extend(self.load(fname))
         return samples
 
     @staticmethod

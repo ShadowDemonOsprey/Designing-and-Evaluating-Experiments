@@ -189,11 +189,11 @@ class BenchmarkRunner:
         # p-value: proportion of bootstrap diffs <= 0
         p_value = sum(1 for d in bootstrap_diffs if d <= 0) / self.n_bootstrap
 
-        # Cohen's d effect size
-        diff_var = sum((d - delta) ** 2 for d in bootstrap_diffs) / max(
-            self.n_bootstrap - 1, 1
-        )
-        pooled_std = diff_var**0.5 if diff_var > 0 else 1e-10
+        # Cohen's d effect size from original paired differences
+        diffs = [t - b for t, b in zip(treat_scores, base_scores)]
+        mean_diff = sum(diffs) / n
+        var_diff = sum((d - mean_diff) ** 2 for d in diffs) / max(n - 1, 1)
+        pooled_std = var_diff**0.5 if var_diff > 0 else 1e-10
         cohens_d = delta / pooled_std
 
         return ComparisonResult(

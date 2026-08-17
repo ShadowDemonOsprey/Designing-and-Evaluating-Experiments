@@ -1,0 +1,32 @@
+[
+  {
+    "id": "sample_001",
+    "input": "What is the capital of France?",
+    "output": "The capital of France is Paris.",
+    "metadata": {"category": "geography", "difficulty": "easy"}
+  },
+  {
+    "id": "sample_002",
+    "input": "Explain the concept of gradient descent in machine learning.",
+    "output": "Gradient descent is an optimization algorithm that iteratively adjusts model parameters to minimize a loss function by moving in the direction of steepest descent, proportional to the negative gradient.",
+    "metadata": {"category": "ml_concepts", "difficulty": "medium"}
+  },
+  {
+    "id": "sample_003",
+    "input": "What is the derivative of sin(x)?",
+    "output": "The derivative of sin(x) is cos(x).",
+    "metadata": {"category": "calculus", "difficulty": "easy"}
+  },
+  {
+    "id": "sample_004",
+    "input": "Describe the transformer architecture.",
+    "output": "The transformer architecture uses self-attention mechanisms to process sequences in parallel. It consists of encoder and decoder layers, each containing multi-head attention and feed-forward networks with residual connections and layer normalization.",
+    "metadata": {"category": "deep_learning", "difficulty": "hard"}
+  },
+  {
+    "id": "sample_005",
+    "input": "What is Bayes' theorem?",
+    "output": "Bayes' theorem states that P(A|B) = P(B|A) * P(A) / P(B), allowing us to update the probability of hypothesis A given new evidence B.",
+    "metadata": {"category": "probability", "difficulty": "medium"}
+  }
+]

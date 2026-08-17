@@ -299,7 +299,7 @@ class ModelEvaluator:
         ref_tokens = set(reference.lower().split())
 
         if not ref_tokens:
-            return 1.0 if not pred_tokens else 0.0
+            return 1.0
 
         return len(pred_tokens & ref_tokens) / len(ref_tokens)
 

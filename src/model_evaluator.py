@@ -13,7 +13,6 @@ from __future__ import annotations
 
 import logging
 import math
-import re
 from collections import Counter
 from dataclasses import dataclass
 from typing import Any
@@ -149,14 +148,6 @@ class ModelEvaluator:
         return sum(
             self.weights.get(name, 0.0) * score for name, score in scores.items()
         )
-
-    @staticmethod
-    def _normalize(text: str) -> str:
-        """Normalize text for comparison."""
-        text = text.lower().strip()
-        text = re.sub(r"\s+", " ", text)
-        text = re.sub(r"[^\w\s]", "", text)
-        return text
 
     @staticmethod
     def _tokenize(text: str) -> list[str]:

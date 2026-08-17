@@ -31,6 +31,7 @@ class ExperimentRunner:
 
     def __init__(self, config: ExperimentConfig) -> None:
         self.config = config
+        self._log_handler: logging.FileHandler | None = None
         self._setup_logging()
         self.results: dict[str, Any] = {}
 
@@ -40,15 +41,23 @@ class ExperimentRunner:
             self.config.log_path,
             f"{self.config.experiment_name}_{int(time.time())}.log",
         )
+        self._log_handler = logging.FileHandler(log_file)
         logging.basicConfig(
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
             handlers=[
-                logging.FileHandler(log_file),
+                self._log_handler,
                 logging.StreamHandler(),
             ],
             force=True,
         )
+
+    def close(self) -> None:
+        """Close file handler to release log file."""
+        if self._log_handler is not None:
+            logging.root.removeHandler(self._log_handler)
+            self._log_handler.close()
+            self._log_handler = None
 
     def run(
         self,
@@ -194,6 +203,7 @@ class ExperimentRunner:
 
         self._save_results()
         logger.info("Experiment completed in %.2fs", elapsed)
+        self.close()
         return self.results
 
     def _load_data(self) -> list[Sample]:

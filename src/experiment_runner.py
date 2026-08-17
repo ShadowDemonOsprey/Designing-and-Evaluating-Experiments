@@ -47,6 +47,7 @@ class ExperimentRunner:
                 logging.FileHandler(log_file),
                 logging.StreamHandler(),
             ],
+            force=True,
         )
 
     def run(

@@ -15,14 +15,13 @@ import json
 import logging
 import os
 import time
-from dataclasses import asdict
 from typing import Any, Callable
 
 from .config import ExperimentConfig
 from .data_loader import DataLoader, Sample
-from .prompt_optimizer import PromptOptimizer, OptimizationResult
-from .model_evaluator import ModelEvaluator, AggregateResult
-from .benchmarking import BenchmarkRunner, BenchmarkResult, ComparisonResult
+from .prompt_optimizer import PromptOptimizer
+from .model_evaluator import ModelEvaluator
+from .benchmarking import BenchmarkRunner
 
 logger = logging.getLogger(__name__)
 

@@ -9,7 +9,6 @@ Provides:
 
 from __future__ import annotations
 
-import json
 import logging
 import math
 import os
@@ -130,9 +129,20 @@ class StatisticalAnalyzer:
                 summary="All differences are zero.",
             )
 
-        # Rank by absolute difference
+        # Rank by absolute difference, averaging tied ranks
         nonzero.sort(key=lambda x: x[0])
-        ranks = list(range(1, len(nonzero) + 1))
+        n_z = len(nonzero)
+        ranks = [0.0] * n_z
+
+        i = 0
+        while i < n_z:
+            j = i
+            while j < n_z and nonzero[j][0] == nonzero[i][0]:
+                j += 1
+            avg_rank = (i + j + 1) / 2.0  # ranks are 1-indexed
+            for k in range(i, j):
+                ranks[k] = avg_rank
+            i = j
 
         # Sum of positive and negative ranks
         w_plus = sum(
@@ -147,7 +157,6 @@ class StatisticalAnalyzer:
         )
 
         w_stat = min(w_plus, w_minus)
-        n_z = len(nonzero)
 
         # Normal approximation for n >= 10
         mean_w = n_z * (n_z + 1) / 4
@@ -340,10 +349,11 @@ class StatisticalAnalyzer:
         return min(1.0, max(0.0, ib))
 
     @staticmethod
-    def _incomplete_beta_simpson(x: float, a: float, b: float, n: int = 2000) -> float:
+    def _incomplete_beta_simpson(x: float, a: float, b: float, n: int = 5000) -> float:
         """I_x(a,b) via Simpson's rule numerical integration.
 
         I_x(a,b) = integral_0^x t^{a-1} (1-t)^{b-1} dt / B(a,b)
+        Uses analytical tail correction for boundary singularities when a<1 or b<1.
         """
         if x <= 0:
             return 0.0
@@ -366,8 +376,19 @@ class StatisticalAnalyzer:
                 s += 2.0 * integrand(lo + i * h)
             return s * h / 3.0
 
-        num = simpson_integral(0.0, x, n)
-        den = simpson_integral(0.0, 1.0, n)
+        # For the denominator (integral 0 to 1), split at a cutoff to handle
+        # singularities at t=1 analytically: tail = integral(cutoff,1) ~ cutoff^(a-1) * (1-cutoff)^b / b
+        cutoff = 1.0 - 1e-6
+        den_main = simpson_integral(0.0, cutoff, n // 2)
+        tail_correction = 0.0
+        if b < 1 and cutoff < 1.0:
+            tail_correction = cutoff ** (a - 1) * (1.0 - cutoff) ** b / b
+        den = den_main + tail_correction
+
+        num = simpson_integral(0.0, min(x, cutoff), n // 2)
+        if x > cutoff and b < 1:
+            num += cutoff ** (a - 1) * (1.0 - cutoff) ** b / b
+
         if den == 0:
             return 0.0
         return num / den

@@ -1,13 +1,12 @@
 """Model evaluation metrics with mathematical rigor.
 
 Composite scoring:
-  S = alpha*BLEU + beta*ROUGE_L + gamma*BERTScore + delta*Faithfulness
+  S = alpha*BLEU + beta*ROUGE_L + gamma*F1 + delta*Faithfulness
   subject to: alpha + beta + gamma + delta = 1
 
 Additional metrics:
   - Exact Match (EM)
   - Token-level F1
-  - Perplexity (information-theoretic)
 """
 
 from __future__ import annotations
@@ -16,7 +15,7 @@ import logging
 import math
 import re
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 logger = logging.getLogger(__name__)

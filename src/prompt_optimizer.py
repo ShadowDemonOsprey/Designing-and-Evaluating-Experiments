@@ -8,8 +8,6 @@ where f_theta is the LLM, x is input, y is ground truth, and m is the metric.
 
 from __future__ import annotations
 
-import copy
-import itertools
 import logging
 import random
 from dataclasses import dataclass, field

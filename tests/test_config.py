@@ -60,3 +60,21 @@ class TestExperimentConfig:
         d = cfg.to_dict()
         assert d["experiment_name"] == "dict_test"
         assert isinstance(d, dict)
+
+    def test_save_json_no_directory(self):
+        cfg = ExperimentConfig(experiment_name="nodir_test")
+        cfg.save_json("test_nodir_output.json")
+        try:
+            loaded = ExperimentConfig.from_json("test_nodir_output.json")
+            assert loaded.experiment_name == "nodir_test"
+        finally:
+            os.unlink("test_nodir_output.json")
+
+    def test_save_yaml_no_directory(self):
+        cfg = ExperimentConfig(experiment_name="nodir_yaml_test")
+        cfg.save_yaml("test_nodir_output.yaml")
+        try:
+            loaded = ExperimentConfig.from_yaml("test_nodir_output.yaml")
+            assert loaded.experiment_name == "nodir_yaml_test"
+        finally:
+            os.unlink("test_nodir_output.yaml")

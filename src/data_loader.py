@@ -67,7 +67,9 @@ class DataLoader:
             data = json.load(f)
         if isinstance(data, dict):
             data = data.get("samples", data.get("data", [data]))
-        return [DataLoader._dict_to_sample(d) for d in data]
+        if not isinstance(data, list):
+            data = [data]
+        return [DataLoader._dict_to_sample(d) for d in data if isinstance(d, dict)]
 
     @staticmethod
     def _load_jsonl(path: str) -> list[Sample]:

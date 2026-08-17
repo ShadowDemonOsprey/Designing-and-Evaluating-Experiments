@@ -267,6 +267,8 @@ class PromptOptimizer:
             v.score = evaluation_fn(v.template, inputs, expected_outputs)
 
         scored = [v for v in variants if v.score is not None]
+        if not scored:
+            raise RuntimeError("All grid search variants failed evaluation")
         best = max(scored, key=lambda v: v.score or 0.0)  # type: ignore[arg-type]
         scores = [v.score or 0.0 for v in scored]
         initial_score = scores[0] if scores else 0.0

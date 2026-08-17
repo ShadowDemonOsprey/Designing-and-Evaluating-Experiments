@@ -60,6 +60,10 @@ class TestBenchmark:
         assert stats.min_val == 1.0
         assert stats.max_val == 5.0
 
+    def test_latency_stats_empty(self):
+        stats = BenchmarkRunner._compute_latency_stats([])
+        assert stats.mean == 0.0
+
 
 class TestComparison:
     def test_compare(self, runner):

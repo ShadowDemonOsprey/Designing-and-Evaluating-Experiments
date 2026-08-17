@@ -68,3 +68,8 @@ class TestGridSearch:
         )
         assert result.best_prompt.template == "a much longer template that should score higher"
         assert result.improvement_pct > 0
+
+    def test_grid_search_all_none_raises(self):
+        def none_fn(t, i, o): return None
+        with pytest.raises(RuntimeError, match="failed evaluation"):
+            PromptOptimizer.grid_search(["a", "b"], none_fn, ["q"], ["a"])

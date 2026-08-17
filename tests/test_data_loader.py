@@ -117,3 +117,19 @@ class TestLoadAll:
         loader = DataLoader(sample_dir)
         samples = loader.load_all()
         assert len(samples) == 1
+
+    def test_load_json_non_list_samples(self, sample_dir):
+        path = os.path.join(sample_dir, "bad.json")
+        with open(path, "w") as f:
+            json.dump({"samples": "not a list"}, f)
+        loader = DataLoader(sample_dir)
+        samples = loader.load("bad.json")
+        assert isinstance(samples, list)
+
+    def test_load_json_numeric_samples(self, sample_dir):
+        path = os.path.join(sample_dir, "bad2.json")
+        with open(path, "w") as f:
+            json.dump({"samples": 123}, f)
+        loader = DataLoader(sample_dir)
+        samples = loader.load("bad2.json")
+        assert isinstance(samples, list)

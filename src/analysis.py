@@ -197,6 +197,8 @@ class StatisticalAnalyzer:
         import random
         rng = random.Random(seed)
         n = len(scores)
+        if n == 0:
+            return (0.0, 0.0)
         means = []
 
         for _ in range(n_bootstrap):
@@ -312,8 +314,8 @@ class StatisticalAnalyzer:
                 f"({comp.get('delta_pct', 0):+.2f}%)",
                 f"  p-value:        {comp.get('p_value', 1):.6f}",
                 f"  Significant:    {'Yes' if comp.get('significant', False) else 'No'}",
-                f"  95% CI:         [{comp.get('confidence_interval', [0, 0])[0]:.4f}, "
-                f"{comp.get('confidence_interval', [0, 0])[1]:.4f}]",
+                f"  95% CI:         [{(comp.get('confidence_interval') or [0, 0])[0]:.4f}, "
+                f"{(comp.get('confidence_interval') or [0, 0])[1]:.4f}]",
                 f"  Cohen's d:      {comp.get('effect_size_cohens_d', 0):.4f}",
                 "",
             ])

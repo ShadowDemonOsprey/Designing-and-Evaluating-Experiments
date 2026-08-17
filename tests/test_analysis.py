@@ -75,6 +75,10 @@ class TestBootstrapCI:
         lo, hi = analyzer.bootstrap_ci(scores, n_bootstrap=1000)
         assert lo < 3.0 < hi
 
+    def test_empty_scores(self, analyzer):
+        lo, hi = analyzer.bootstrap_ci([])
+        assert lo == 0.0 and hi == 0.0
+
 
 class TestHedgesG:
     def test_no_difference(self, analyzer):
@@ -108,6 +112,21 @@ class TestReport:
         assert "test" in report
         assert "7.50%" in report
         assert "Significant" in report
+
+    def test_report_none_ci(self, analyzer):
+        results = {
+            "experiment_name": "test",
+            "comparison": {
+                "delta_quality": 0,
+                "delta_pct": 0,
+                "p_value": 0.5,
+                "significant": False,
+                "confidence_interval": None,
+                "effect_size_cohens_d": 0,
+            },
+        }
+        report = analyzer.generate_report(results)
+        assert "[0.0000" in report
 
 
 class TestTTestCorrectness:

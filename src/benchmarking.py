@@ -208,6 +208,8 @@ class BenchmarkRunner:
     @staticmethod
     def _compute_latency_stats(latencies: list[float]) -> LatencyStats:
         """Compute latency statistics from a list of measurements."""
+        if not latencies:
+            return LatencyStats(mean=0.0, median=0.0, p95=0.0, p99=0.0, std=0.0, min_val=0.0, max_val=0.0)
         sorted_lat = sorted(latencies)
         n = len(sorted_lat)
         mean_val = sum(sorted_lat) / n

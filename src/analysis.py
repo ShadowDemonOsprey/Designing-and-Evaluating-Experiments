@@ -197,7 +197,7 @@ class StatisticalAnalyzer:
         import random
         rng = random.Random(seed)
         n = len(scores)
-        if n == 0:
+        if n == 0 or n_bootstrap <= 0:
             return (0.0, 0.0)
         means = []
 

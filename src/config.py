@@ -25,17 +25,17 @@ class ModelConfig:
 class MetricWeights:
     """Weights for the composite evaluation score.
 
-    S = alpha*BLEU + beta*ROUGE_L + gamma*BERTScore + delta*Faithfulness
+    S = alpha*BLEU + beta*ROUGE_L + gamma*F1 + delta*Faithfulness
     Subject to: alpha + beta + gamma + delta = 1
     """
 
     bleu: float = 0.25
     rouge_l: float = 0.25
-    bert_score: float = 0.25
+    f1: float = 0.25
     faithfulness: float = 0.25
 
     def __post_init__(self) -> None:
-        total = self.bleu + self.rouge_l + self.bert_score + self.faithfulness
+        total = self.bleu + self.rouge_l + self.f1 + self.faithfulness
         if abs(total - 1.0) > 1e-6:
             raise ValueError(
                 f"Weights must sum to 1.0, got {total}"
@@ -45,7 +45,7 @@ class MetricWeights:
         return {
             "bleu": self.bleu,
             "rouge_l": self.rouge_l,
-            "bert_score": self.bert_score,
+            "f1": self.f1,
             "faithfulness": self.faithfulness,
         }
 

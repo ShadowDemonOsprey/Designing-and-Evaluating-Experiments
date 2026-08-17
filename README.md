@@ -43,7 +43,7 @@ where $f_\theta$ is the LLM with parameters $\theta$, $x$ is the input, and $y$ 
 
 We employ a composite scoring function:
 
-$$S = \alpha \cdot \text{BLEU} + \beta \cdot \text{ROUGE-L} + \gamma \cdot \text{BERTScore} + \delta \cdot \text{Faithfulness}$$
+$$S = \alpha \cdot \text{BLEU} + \beta \cdot \text{ROUGE-L} + \gamma \cdot F_1 + \delta \cdot \text{Faithfulness}$$
 
 subject to $\alpha + \beta + \gamma + \delta = 1$, with weights tuned per task.
 

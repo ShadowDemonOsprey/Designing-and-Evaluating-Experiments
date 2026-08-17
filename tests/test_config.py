@@ -14,12 +14,12 @@ from src.config import ExperimentConfig, MetricWeights, ModelConfig
 
 class TestMetricWeights:
     def test_valid_weights(self):
-        w = MetricWeights(bleu=0.5, rouge_l=0.3, bert_score=0.1, faithfulness=0.1)
+        w = MetricWeights(bleu=0.5, rouge_l=0.3, f1=0.1, faithfulness=0.1)
         assert w.bleu == 0.5
 
     def test_invalid_weights(self):
         with pytest.raises(ValueError, match="sum to 1.0"):
-            MetricWeights(bleu=0.5, rouge_l=0.5, bert_score=0.5, faithfulness=0.5)
+            MetricWeights(bleu=0.5, rouge_l=0.5, f1=0.5, faithfulness=0.5)
 
     def test_as_dict(self):
         w = MetricWeights()

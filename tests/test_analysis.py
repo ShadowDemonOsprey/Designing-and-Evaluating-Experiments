@@ -8,7 +8,7 @@ import pytest
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
-from src.analysis import StatisticalAnalyzer, TestResult
+from src.analysis import StatisticalAnalyzer, StatisticalTestResult
 
 
 @pytest.fixture
@@ -96,3 +96,39 @@ class TestReport:
         assert "test" in report
         assert "7.50%" in report
         assert "Significant" in report
+
+
+class TestTTestCorrectness:
+    """Validate t-test p-values against scipy for mathematical accuracy."""
+
+    def test_t_test_matches_scipy(self, analyzer):
+        try:
+            from scipy.stats import ttest_rel
+        except ImportError:
+            pytest.skip("scipy not installed")
+
+        cases = [
+            ([1.0, 2.0, 3.0, 4.0, 5.0], [1.5, 2.5, 3.5, 4.5, 5.5]),
+            ([0.8, 0.9, 0.7, 0.85, 0.75], [0.6, 0.5, 0.6, 0.55, 0.65]),
+            ([10.0, 20.0, 30.0], [12.0, 22.0, 32.0]),
+        ]
+        for a, b in cases:
+            ours = analyzer.paired_t_test(a, b)
+            _, scipy_p = ttest_rel(a, b)
+            assert ours.p_value == pytest.approx(scipy_p, abs=0.01), (
+                f"Mismatch: ours={ours.p_value:.6f}, scipy={scipy_p:.6f}"
+            )
+
+    def test_incomplete_beta_correctness(self):
+        try:
+            from scipy.special import betainc
+        except ImportError:
+            pytest.skip("scipy not installed")
+
+        cases = [(0.5, 1.0, 1.0), (0.5, 2.5, 0.5), (0.3, 2.0, 3.0), (0.8, 5.0, 1.0)]
+        for x, a, b in cases:
+            scipy_val = betainc(a, b, x)
+            our_val = StatisticalAnalyzer._incomplete_beta_simpson(x, a, b)
+            assert our_val == pytest.approx(scipy_val, abs=0.01), (
+                f"I({x},{a},{b}): ours={our_val:.6f}, scipy={scipy_val:.6f}"
+            )

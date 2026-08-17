@@ -20,7 +20,7 @@ logger = logging.getLogger(__name__)
 
 
 @dataclass
-class TestResult:
+class StatisticalTestResult:
     """Result of a statistical hypothesis test."""
 
     test_name: str
@@ -41,7 +41,7 @@ class StatisticalAnalyzer:
 
     def paired_t_test(
         self, scores_a: list[float], scores_b: list[float]
-    ) -> TestResult:
+    ) -> StatisticalTestResult:
         """Paired Student's t-test.
 
         H0: mean(A) == mean(B)
@@ -61,7 +61,7 @@ class StatisticalAnalyzer:
 
         if std_diff == 0:
             if mean_diff == 0:
-                return TestResult(
+                return StatisticalTestResult(
                     test_name="Paired t-test",
                     statistic=0.0,
                     p_value=1.0,
@@ -70,7 +70,7 @@ class StatisticalAnalyzer:
                     effect_size_name="Cohen's d",
                     summary="No variance and no mean difference; tests are identical.",
                 )
-            return TestResult(
+            return StatisticalTestResult(
                 test_name="Paired t-test",
                 statistic=float("inf") if mean_diff > 0 else float("-inf"),
                 p_value=0.0,
@@ -90,7 +90,7 @@ class StatisticalAnalyzer:
         # Cohen's d for paired samples
         cohens_d = mean_diff / std_diff
 
-        return TestResult(
+        return StatisticalTestResult(
             test_name="Paired t-test",
             statistic=t_stat,
             p_value=p_value,
@@ -104,7 +104,7 @@ class StatisticalAnalyzer:
 
     def wilcoxon_test(
         self, scores_a: list[float], scores_b: list[float]
-    ) -> TestResult:
+    ) -> StatisticalTestResult:
         """Wilcoxon signed-rank test (non-parametric).
 
         Tests median difference without assuming normality.
@@ -120,7 +120,7 @@ class StatisticalAnalyzer:
         # Remove zero differences
         nonzero = [(abs(d), i) for i, d in enumerate(diffs) if d != 0]
         if not nonzero:
-            return TestResult(
+            return StatisticalTestResult(
                 test_name="Wilcoxon signed-rank",
                 statistic=0.0,
                 p_value=1.0,
@@ -162,7 +162,7 @@ class StatisticalAnalyzer:
         # Effect size: rank-biserial correlation
         effect_size = 1 - (2 * w_stat) / (n_z * (n_z + 1)) if n_z > 0 else 0.0
 
-        return TestResult(
+        return StatisticalTestResult(
             test_name="Wilcoxon signed-rank",
             statistic=w_stat,
             p_value=p_value,
@@ -233,7 +233,7 @@ class StatisticalAnalyzer:
 
     def comprehensive_comparison(
         self, scores_a: list[float], scores_b: list[float]
-    ) -> list[TestResult]:
+    ) -> list[StatisticalTestResult]:
         """Run all applicable tests and return results."""
         results = []
 
@@ -321,46 +321,56 @@ class StatisticalAnalyzer:
 
     @staticmethod
     def _t_test_p_value(t_stat: float, df: int) -> float:
-        """Approximate two-tailed p-value for t-distribution.
+        """Two-tailed p-value for t-distribution.
 
-        Uses the incomplete beta function approximation.
+        Uses I_x(df/2, 1/2) where x = df/(df + t^2).
         """
-        x = df / (df + t_stat**2)
-        # Approximate I_x(a, b) using simple numerical integration
-        a = df / 2.0
-        b = 0.5
-        p = StatisticalAnalyzer._incomplete_beta(x, a, b)
-        return min(1.0, max(0.0, p))
+        try:
+            from scipy.special import betainc
+            x = df / (df + t_stat**2)
+            return min(1.0, max(0.0, betainc(df / 2.0, 0.5, x)))
+        except ImportError:
+            return StatisticalAnalyzer._t_test_p_value_numeric(t_stat, df)
 
     @staticmethod
-    def _incomplete_beta(x: float, a: float, b: float, n_terms: int = 100) -> float:
-        """Regularized incomplete beta function via series expansion.
+    def _t_test_p_value_numeric(t_stat: float, df: int) -> float:
+        """Fallback t-test p-value via numerical integration of incomplete beta."""
+        x = df / (df + t_stat**2)
+        ib = StatisticalAnalyzer._incomplete_beta_simpson(x, df / 2.0, 0.5)
+        return min(1.0, max(0.0, ib))
 
-        I_x(a, b) = (x^a * (1-x)^b) / (a * B(a,b)) * sum(...)
+    @staticmethod
+    def _incomplete_beta_simpson(x: float, a: float, b: float, n: int = 2000) -> float:
+        """I_x(a,b) via Simpson's rule numerical integration.
+
+        I_x(a,b) = integral_0^x t^{a-1} (1-t)^{b-1} dt / B(a,b)
         """
         if x <= 0:
             return 0.0
         if x >= 1:
             return 1.0
 
-        beta = math.lgamma(a) + math.lgamma(b) - math.lgamma(a + b)
-        prefix = a * math.log(x) + b * math.log(1 - x) - math.log(a) - beta
+        def integrand(t: float) -> float:
+            if t <= 0.0:
+                return 0.0
+            if t >= 1.0:
+                return 0.0
+            return t ** (a - 1) * (1.0 - t) ** (b - 1)
 
-        total = 0.0
-        term = 0.0
-        for k in range(n_terms):
-            log_term = prefix + k * math.log(x) + (
-                math.lgamma(a + b + k) - math.lgamma(a + 1 + k) - math.lgamma(b)
-            )
-            if k == 0:
-                term = math.exp(log_term)
-            else:
-                term *= x * (a + b + k - 1) / ((a + k) * k) * (a + k - 1) / (a + b + k - 1)
-                if abs(term) < 1e-15:
-                    break
-            total += term
+        def simpson_integral(lo: float, hi: float, steps: int) -> float:
+            h = (hi - lo) / steps
+            s = integrand(lo) + integrand(hi)
+            for i in range(1, steps, 2):
+                s += 4.0 * integrand(lo + i * h)
+            for i in range(2, steps, 2):
+                s += 2.0 * integrand(lo + i * h)
+            return s * h / 3.0
 
-        return min(1.0, max(0.0, total))
+        num = simpson_integral(0.0, x, n)
+        den = simpson_integral(0.0, 1.0, n)
+        if den == 0:
+            return 0.0
+        return num / den
 
     @staticmethod
     def _normal_cdf(x: float) -> float:
